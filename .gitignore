@@ -1,0 +1,41 @@
+# Jetbrains IDE files
+.idea/
+
+VSCode IDE Files
+.vscode/
+
+#Python Virtual Environment
+venv/
+*.pyc
+
+#pip packaging
+dist/
+robota.egg-info/
+
+#Pytest
+.pytest_cache/
+
+#Compiled bytecode
+__pycache__/
+build/
+
+#Credentials
+../robota-marking/robota-config.yaml
+
+#Webpage Output
+/webpages/*.html
+/webpages/marking_report
+/webpages/progress_report
+/webpages/industry_profiles
+
+#Git commit visualisation
+/robota/commit_visualisation/output.dot
+/robota/commit_visualisation/output.png
+
+#Marking integration test results
+../robota-marking/marking/tests/*results.txt
+/robota-progress-config.yaml
+/robota/commit_visualisation/output*
+/docs/html/
+/robota_core.egg-info
+/robota.log

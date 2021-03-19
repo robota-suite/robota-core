@@ -1,0 +1,13 @@
+requests
+jinja2
+python-gitlab==2.2.0
+PyYaml>=5.1
+pytest
+gitpython
+python-jenkins
+python-dateutil
+bleach
+Markdown
+PyGithub
+setuptools
+loguru
