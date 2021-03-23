@@ -9,5 +9,4 @@ python-dateutil
 bleach
 Markdown
 PyGithub
-setuptools
 loguru

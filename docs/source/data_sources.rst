@@ -24,14 +24,17 @@ marking_config
 ##################
 The location of the set up files for RoboTA marking.
 
-Valid data sources: local, gitlab
+Valid data sources: local_path, gitlab
 
 Required keys:
 
 * course_config_file: The path of the Course config file
 * mark_scheme_file: The path of the file that specifies the mark scheme 
 * build_config_file: The path to the file that has information about the build config
- 
+
+All of these keys may specify sub-folder(s) in the git repository, e.g.
+    course_config_file: config_files/course/course_config.yaml
+
 issues
 ##########
 The location of issues. Issues are used in marking students planning and teamwork.
@@ -67,13 +70,13 @@ student_details
 ################
 Information about student names and usernames
 
-Valid sources: gitlab
+Valid sources: gitlab, local_path
 
 student_emails
 ##################
 The relationship between student usernames and email addresses
 
-Valid sources: gitlab
+Valid sources: gitlab, local_path
 
 required keys:
 
@@ -83,7 +86,7 @@ ta_marks
 ##########
 Manually assigned marks that can be used to override RoboTA marks in the marking report
 
-Valid sources: gitlab, local
+Valid sources: gitlab, local_path
 
 required keys:
 
@@ -212,10 +215,6 @@ Example Config
             data_source: github_repo
         remote_provider:
             data_source: github_repo
-        common_errors:
-            data_source: local_errors
-            file_name: error_definitions.yaml
-
 
     # Details of data sources. The name of each data source corresponds to those specified in the data_types section above.
     # Keys and values are specific to the data source.
@@ -227,6 +226,10 @@ Example Config
             project: merrygoat/chi4
             token: xxx-xxx-xxx
 
-        local_errors:
+        local_repository:
             type: local_path
-            directory: C:/robota/robota-common-errors
+            directory: C:/robota/chi_4
+
+In this case repository could probably be set to the data source: ``github_repo``, but it might be useful to
+set it to ``local_repository`` if the repository was already synced locally and was large. Operating on large
+repositories locally is likely to be more efficient in most cases than querying them through the API.
