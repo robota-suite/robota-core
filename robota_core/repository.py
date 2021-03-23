@@ -479,7 +479,7 @@ def new_repository(robota_config: dict) -> Union[Repository, None]:
         return None
     repo_type = repo_config["type"]
 
-    logger.debug(f"Initialising {repo_type} issue server.")
+    logger.debug(f"Initialising {repo_type} repository.")
 
     if repo_type == "gitlab":
         return GitlabRepository(repo_config)
