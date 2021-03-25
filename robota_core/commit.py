@@ -30,7 +30,7 @@ class Commit:
     """
     def __init__(self, commit, commit_source: str, project_url: str = None):
         self.created_at = None
-        self.id: Union[str, None] = None
+        self.id = None
         self.author_name = None    # Used only for progress report
         self.short_id = None
         self.parent_ids = None
