@@ -43,16 +43,16 @@ class GitlabServer:
 
     def _open_gitlab_connection(self) -> gitlab.Gitlab:
         """Open a connection to the GitLab server using authentication token."""
-        gl_connection = gitlab.Gitlab(self.url, private_token=self.token)
+        server = gitlab.Gitlab(self.url, private_token=self.token)
         try:
-            gl_connection.auth()
+            server.auth()
         except gitlab.exceptions.GitlabAuthenticationError as error_type:
             logger.error("Incorrect authentication token provided. Unable to connect to GitLab.")
             raise error_type
 
-        logger.info(f"Logged in to gitlab as {gl_connection.user.attributes['name']}")
+        logger.info(f"Logged in to gitlab: '{server.url}' as {server.user.attributes['name']}")
 
-        return gl_connection
+        return server
 
     def open_gitlab_project(self, project_path: str) -> gitlab.v4.objects.Project:
         """Open a GitLab project.

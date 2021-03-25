@@ -148,7 +148,7 @@ class Repository:
     def get_branch(self, name: str) -> Union[Branch, None]:
         """Get a Branch from the repository by name. If Branch does not exist, return None."""
         if not self._branches:
-            self._fetch_branches()
+            self._branches = self._fetch_branches()
         for branch in self._branches:
             if branch.name == name:
                 return branch
@@ -479,7 +479,7 @@ def new_repository(robota_config: dict) -> Union[Repository, None]:
         return None
     repo_type = repo_config["type"]
 
-    logger.debug(f"Initialising {repo_type} issue server.")
+    logger.debug(f"Initialising {repo_type} repository.")
 
     if repo_type == "gitlab":
         return GitlabRepository(repo_config)

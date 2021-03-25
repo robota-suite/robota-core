@@ -37,36 +37,49 @@ def get_config(file_names: Union[str, List[str]], data_source: dict) -> list:
     if isinstance(file_names, str):
         file_names = [file_names]
 
-    parsed_variables = []
     if not isinstance(data_source, dict):
         raise TypeError("Config variables must be a dictionary of variables.")
     source_type = data_source["type"]
 
     if source_type == "local_path":
-        for name in file_names:
-            config_path = pathlib.Path(data_source["path"]) / pathlib.Path(name)
-            if config_path.exists():
-                config = parse_config(config_path)
-                parsed_variables.append(config)
-            else:
-                parsed_variables.append(None)
+        parsed_variables = _config_from_local_path(data_source, file_names)
     elif source_type == "gitlab":
-        config_file_directory, commit_id = get_gitlab_config(data_source)
-        for name in file_names:
-            config_path = config_file_directory / pathlib.Path(name)
-            if config_path.is_file():
-                file_contents = parse_config(config_path)
-                if isinstance(file_contents, dict):
-                    file_contents["config_commit_id"] = commit_id
-                parsed_variables.append(file_contents)
-            else:
-                parsed_variables.append(None)
-        if config_file_directory:
-            shutil.rmtree(config_file_directory, onerror=rmtree_error)
+        parsed_variables = _config_from_gitlab(data_source, file_names)
     else:
         raise RobotaConfigLoadError(f"Source type: {source_type} is not a valid data source for"
                                     f" the 'get_config' method.")
 
+    return parsed_variables
+
+
+def _config_from_gitlab(data_source, file_names) -> List[dict]:
+    parsed_variables = []
+
+    config_file_directory, commit_id = get_gitlab_config(data_source)
+    for name in file_names:
+        config_path = config_file_directory / pathlib.Path(name)
+        if config_path.is_file():
+            file_contents = parse_config(config_path)
+            if isinstance(file_contents, dict):
+                file_contents["config_commit_id"] = commit_id
+            parsed_variables.append(file_contents)
+        else:
+            parsed_variables.append(None)
+    if config_file_directory:
+        shutil.rmtree(config_file_directory, onerror=rmtree_error)
+    return parsed_variables
+
+
+def _config_from_local_path(data_source, file_names) -> List[dict]:
+    parsed_variables = []
+
+    for name in file_names:
+        config_path = pathlib.Path(data_source["path"]) / pathlib.Path(name)
+        if config_path.exists():
+            config = parse_config(config_path)
+            parsed_variables.append(config)
+        else:
+            parsed_variables.append(None)
     return parsed_variables
 
 
