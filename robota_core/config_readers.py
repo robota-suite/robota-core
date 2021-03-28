@@ -79,6 +79,8 @@ def _config_from_local_path(data_source, file_names) -> List[dict]:
             config = parse_config(config_path)
             parsed_variables.append(config)
         else:
+            logger.warning(f"Attempted to load config from path: '{config_path}', "
+                           f"but path does not exist.")
             parsed_variables.append(None)
     return parsed_variables
 
