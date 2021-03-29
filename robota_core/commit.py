@@ -57,6 +57,9 @@ class Commit:
         self.message = clean(self.raw_message)
         self.merge_commit = self._is_merge_commit()
 
+    def __hash__(self):
+        return self.id
+
     def __repr__(self):
         return f"{self.short_id}"
 
