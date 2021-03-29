@@ -4,6 +4,7 @@ import datetime
 import copy
 from typing import List, Union, TYPE_CHECKING
 
+import dateparser
 import dateutil.parser
 import gitlab.v4.objects
 import github.Tag
@@ -12,7 +13,7 @@ import github.CommitComment
 import github.GithubObject
 import git
 
-from robota_core.string_processing import clean, string_to_datetime, get_link
+from robota_core.string_processing import clean, get_link
 
 if TYPE_CHECKING:
     from robota_core.repository import Event
@@ -56,6 +57,9 @@ class Commit:
         self.message = clean(self.raw_message)
         self.merge_commit = self._is_merge_commit()
 
+    def __hash__(self):
+        return hash(self.id)
+
     def __repr__(self):
         return f"{self.short_id}"
 
@@ -88,7 +92,7 @@ class Commit:
 
     def _commit_from_gitlab(self, gitlab_commit: gitlab.v4.objects.ProjectCommit, project_url: str):
         """Convert a Gitlab commit to RoboTA Commit."""
-        self.created_at = string_to_datetime(gitlab_commit.attributes["created_at"])
+        self.created_at = dateparser.parse(gitlab_commit.attributes["created_at"])
         self.id = gitlab_commit.attributes["id"]
         self.author_name = gitlab_commit.attributes["author_name"]
         self.short_id = gitlab_commit.attributes["short_id"]

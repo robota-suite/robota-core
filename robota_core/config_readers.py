@@ -79,6 +79,8 @@ def _config_from_local_path(data_source, file_names) -> List[dict]:
             config = parse_config(config_path)
             parsed_variables.append(config)
         else:
+            logger.warning(f"Attempted to load config from path: '{config_path}', "
+                           f"but path does not exist.")
             parsed_variables.append(None)
     return parsed_variables
 
@@ -94,7 +96,12 @@ def get_gitlab_config(config_variables: dict) -> Tuple[pathlib.Path, str]:
     :return: the temporary directory containing the config files.
     """
     # Read GitLab authentication token stored as environment variable
-    gitlab_server = gitlab_tools.GitlabServer(config_variables["url"], config_variables["token"])
+    if "token" in config_variables:
+        token = config_variables["token"]
+    else:
+        token = None
+
+    gitlab_server = gitlab_tools.GitlabServer(config_variables["url"], token)
     if "branch" in config_variables:
         branch_name = config_variables["branch"]
     else:
@@ -199,7 +206,11 @@ def read_yaml_file(config_location: pathlib.Path) -> dict:
     """
     # noinspection PyTypeChecker
     with open(config_location, encoding='utf8') as yaml_file:
-        config = yaml.load(yaml_file.read(), Loader=yaml.FullLoader)
+        try:
+            config = yaml.load(yaml_file.read(), Loader=yaml.FullLoader)
+        except yaml.YAMLError as e:
+            logger.error(f"YAML Parsing of file {config_location.absolute()} failed.")
+            raise e
     return config
 
 

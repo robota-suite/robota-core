@@ -1,4 +1,6 @@
 """General methods for interfacing with GitLab via the python-Gitlab library."""
+import sys
+
 from loguru import logger
 import urllib.request
 from typing import List
@@ -43,12 +45,20 @@ class GitlabServer:
 
     def _open_gitlab_connection(self) -> gitlab.Gitlab:
         """Open a connection to the GitLab server using authentication token."""
+        if not self.token:
+            logger.error("Must provide an authentication token in robota config to use the "
+                         "gitlab API.")
+            raise KeyError()
         server = gitlab.Gitlab(self.url, private_token=self.token)
         try:
             server.auth()
-        except gitlab.exceptions.GitlabAuthenticationError as error_type:
+        except gitlab.exceptions.GitlabAuthenticationError:
             logger.error("Incorrect authentication token provided. Unable to connect to GitLab.")
-            raise error_type
+            # Exit to prevent really long gitlab stack trace.
+            sys.exit(1)
+        except gitlab.exceptions.GitlabHttpError:
+            logger.error(f"Unable to find gitlab server '{self.url}.")
+            sys.exit(1)
 
         logger.info(f"Logged in to gitlab: '{server.url}' as {server.user.attributes['name']}")
 
@@ -70,7 +80,7 @@ class GitlabServer:
             logger.error(f"Unable to find project: {project_path}. It either does not exist or "
                          f"the current user {self.gitlab_connection.user.attributes['name']} does "
                          f"not have access to this project.")
-            raise error_type
+            sys.exit(1)
         logger.info(f"Connected to gitlab project {project.attributes['path_with_namespace']}")
         return project
 

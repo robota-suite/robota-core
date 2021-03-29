@@ -353,8 +353,11 @@ class GitLabIssueServer(IssueServer):
 
     def __init__(self, issue_source: dict):
         super().__init__()
-
-        gitlab_server = gitlab_tools.GitlabServer(issue_source["url"], issue_source["token"])
+        if "token" in issue_source:
+            token = issue_source["token"]
+        else:
+            token = None
+        gitlab_server = gitlab_tools.GitlabServer(issue_source["url"], token)
         self.project = gitlab_server.open_gitlab_project(issue_source["project"])
 
     def _fetch_issues(self, start: datetime.datetime, end: datetime.datetime,
