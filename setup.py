@@ -23,6 +23,7 @@ setup(
                       'bleach',
                       'Markdown',
                       'PyGithub',
-                      'loguru'
+                      'loguru',
+                      'dateparser'
                       ]
 )
