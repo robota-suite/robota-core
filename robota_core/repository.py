@@ -377,7 +377,11 @@ class GitlabRepository(Repository):
     """
 
     def __init__(self, data_source: dict):
-        server = gitlab_tools.GitlabServer(data_source["url"], data_source["token"])
+        if "token" in data_source:
+            token = data_source["token"]
+        else:
+            token = None
+        server = gitlab_tools.GitlabServer(data_source["url"], token)
         self.project = server.open_gitlab_project(data_source["project"])
 
         super().__init__(self.project.attributes["web_url"])

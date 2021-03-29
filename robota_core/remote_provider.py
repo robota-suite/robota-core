@@ -71,7 +71,11 @@ class GithubRemoteProvider(RemoteProvider):
 class GitlabRemoteProvider(RemoteProvider):
     def __init__(self, provider_source: dict):
         super().__init__()
-        server = gitlab_tools.GitlabServer(provider_source["url"], provider_source["token"])
+        if "token" in provider_source:
+            token = provider_source["token"]
+        else:
+            token = None
+        server = gitlab_tools.GitlabServer(provider_source["url"], token)
         self.project = server.open_gitlab_project(provider_source["project"])
 
         super().__init__()
