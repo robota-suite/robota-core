@@ -1,10 +1,14 @@
 import datetime
+import io
+import sys
 from abc import abstractmethod
 from typing import List, Union
 
 import github
 import github.Branch
+from github.File import File
 import gitlab
+import gitlab.v4.objects
 import git
 from loguru import logger
 
@@ -30,6 +34,8 @@ class Branch:
             self._branch_from_github(branch)
         elif source == "dict":
             self._branch_from_dict(branch)
+        elif source == "local":
+            self._branch_from_local(branch)
         else:
             TypeError("Unknown branch type.")
 
@@ -44,6 +50,10 @@ class Branch:
     def _branch_from_github(self, branch: github.Branch.Branch):
         self.name = branch.name
         self.id = branch.commit.sha
+
+    def _branch_from_local(self, branch: git.Head):
+        self.name = branch.name
+        self.id = branch.commit.hexsha
 
 
 class Event:
@@ -97,7 +107,7 @@ class Event:
 class Diff:
     """A representation of a git diff between two points in time for a single
     file in a git repository."""
-    def __init__(self, diff_info: dict, diff_source: str):
+    def __init__(self, diff_info, diff_source: str):
         self.old_path: str
         self.new_path: str
         self.new_file: bool
@@ -105,6 +115,10 @@ class Diff:
 
         if diff_source == "gitlab":
             self._diff_from_gitlab(diff_info)
+        elif diff_source == "github":
+            self._diff_from_github(diff_info)
+        elif diff_source == "local_repo":
+            self._diff_from_local(diff_info)
         else:
             raise TypeError(f"Unknown diff source: '{diff_source}'")
 
@@ -114,6 +128,24 @@ class Diff:
         self.new_path = diff_info["new_path"]
         self.new_file = diff_info["new_file"]
         self.diff = diff_info["diff"]
+
+    def _diff_from_local(self, diff_info: git.Diff):
+        self.old_path = diff_info.a_path
+        self.new_path = diff_info.b_path
+        self.new_file = diff_info.new_file
+        self.diff = diff_info.diff
+
+    def _diff_from_github(self, diff_info: github.File.File):
+        self.new_path = diff_info.filename
+        if diff_info.previous_filename is None:
+            self.old_path = self.new_path
+        else:
+            self.old_path = diff_info.previous_filename
+        if diff_info.status == "added":
+            self.new_file = True
+        else:
+            self.new_file = False
+        self.diff = diff_info.patch
 
 
 class Repository:
@@ -275,20 +307,44 @@ class LocalRepository(Repository):
         return file_paths
 
     def get_file_contents(self, file_path: str, branch: str = "master") -> Union[bytes, None]:
-        # TODO: This one is easy
-        raise NotImplementedError("Get file contents not implemented for LocalRepository")
+        file = self.repo.heads[branch].commit.tree / file_path
 
-    def compare(self, point_1: str, point_2: str) -> dict:
-        # TODO: This should be easy too
-        raise NotImplementedError("compare not implemented for LocalRepository")
+        with io.BytesIO(file.data_stream.read()) as f:
+            return f.read()
+
+    def compare(self, point_1: str, point_2: str) -> List[Diff]:
+        commit_1 = self._get_commit(point_1)
+        commit_2 = self._get_commit(point_2)
+        diffs = commit_1.diff(commit_2, create_patch=True)
+        robota_diffs = [Diff(diff, "local_repo") for diff in diffs]
+        return robota_diffs
+
+    def _get_commit(self, ref: str) -> git.Commit:
+        """Get a commit object from a ref which is a branch, tag or commit SHA."""
+        try:
+            commit = self.repo.heads[ref].commit
+            return commit
+        except IndexError:
+            pass
+        try:
+            commit = self.repo.tags[ref].commit
+            return commit
+        except IndexError:
+            pass
+        try:
+            commit = self.repo.commit(ref)
+            return commit
+        except IndexError:
+            logger.error(f"Can't find object {ref} in Local repository. Object must be branch name,"
+                         f"tag or commit SHA.")
+            sys.exit(1)
 
     def get_events(self) -> List[Event]:
         # TODO: Can events be mined from the reflog?
         raise NotImplementedError("Get events not implemented for LocalRepository")
 
     def _fetch_branches(self) -> List[Branch]:
-        # TODO: implement a local Branch type
-        return [Branch(branch, "local") for branch in self.repo.branches()]
+        return [Branch(branch, "local") for branch in self.repo.branches]
 
     def _fetch_commits(self, start: Union[datetime.datetime, None],
                        end: Union[datetime.datetime, None],
@@ -335,11 +391,20 @@ class GithubRepository(Repository):
             return None
         return file.decoded_content
 
-    def compare(self, point_1: str, point_2: str) -> dict:
-        raise NotImplementedError("Method not implemented for Github Repository")
+    def compare(self, point_1: str, point_2: str) -> List[Diff]:
+        comparison = self.repo.compare(point_1, point_2)
+        return [Diff(diff, "github") for diff in comparison.files]
 
     def _fetch_commit_by_id(self, commit_id: str) -> Union[Commit, None]:
-        pass
+        try:
+            commit_data = self.repo.get_commit(commit_id)
+        except github.GithubException as e:
+            if e.status == 422:
+                return None
+            else:
+                raise e
+
+        return Commit(commit_data, "github")
 
     def _fetch_commits(self, start: Union[datetime.datetime, None],
                        end: Union[datetime.datetime, None],
@@ -353,17 +418,6 @@ class GithubRepository(Repository):
 
         github_commits = self.repo.get_commits(sha=branch, since=start, until=end)
         return [Commit(github_commit, "github") for github_commit in github_commits]
-
-    def get_commit_by_id(self, commit_id: str) -> Union[Commit, None]:
-        try:
-            commit_data = self.repo.get_commit(commit_id)
-        except github.GithubException as e:
-            if e.status == 422:
-                return None
-            else:
-                raise e
-
-        return Commit(commit_data, "github")
 
     def _fetch_tags(self) -> List[Tag]:
         github_tags = self.repo.get_tags()
