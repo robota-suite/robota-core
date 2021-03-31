@@ -43,8 +43,8 @@ class StudentAttendance:
             logger.info("Connecting to Benchmark to retrieve attendance data.")
             self._get_benchmark_attendance(attendance_source)
         else:
-            raise NotImplementedError(f"Student attendance of type: "
-                                      f"{attendance_source['type']} not implemented.")
+            raise KeyError(f"Student attendance of type: "
+                           f"{attendance_source['type']} not implemented.")
 
     def _get_benchmark_attendance(self, attendance_source: dict):
         """Collect data from the UoM CS Benchmark API. To simplify the API requests, all
