@@ -37,7 +37,7 @@ RoboTA Config
 
 RoboTA requires access to a number of data sources to collect data to operate on. 
 Details of these data sources and information required to connect to them is provided in the robota config yaml file.
-Documentation on the config file can be found in the :doc:`data_sources` section of the documentation.
+Documentation on the config file can be found in the :doc:`robota_config` section of the documentation.
 robota config template files are provided with the robota-common-errors, robota-progress and robota-marking packages.
 
 
@@ -47,7 +47,7 @@ API Reference
 .. toctree::
    :maxdepth: 3
 
-   data_sources
+   robota_config
    modules
 
 * :ref:`genindex`

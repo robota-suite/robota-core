@@ -214,9 +214,12 @@ def read_yaml_file(config_location: pathlib.Path) -> dict:
     return config
 
 
-def get_robota_config(config_path: str, command_line_args: dict) -> dict:
+def get_robota_config(config_path: str, substitution_vars: dict) -> dict:
     """The robota config specifies the source for each data type used by RoboTA. The RoboTA
-    config is always stored locally since it contains API tokens."""
+    config is always stored locally since it contains API tokens.
+    :param config_path: The path of the robota config file to read.
+    :param substitution_vars: An optional dictionary of values to substitute into the config file.
+    """
     config_path = pathlib.Path(config_path)
 
     # Load RoboTA config from file.
@@ -226,7 +229,7 @@ def get_robota_config(config_path: str, command_line_args: dict) -> dict:
         raise RobotaConfigLoadError(f"Unable to load robota config from {config_path.absolute()}")
     logger.debug(f"robota-config loaded from {config_path.absolute()}")
 
-    return substitute_keys(robota_config, command_line_args)
+    return substitute_keys(robota_config, substitution_vars)
 
 
 def substitute_keys(robota_config: dict, command_line_args: dict) -> dict:
