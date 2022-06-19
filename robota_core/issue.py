@@ -1,13 +1,12 @@
 """Objects and for describing and processing Git Issues."""
-
 from abc import abstractmethod
 import datetime
-from typing import List, Union
+from typing import List, Union, Tuple
 import re
 
 import github.Issue
 import github.IssueComment
-import gitlab
+from gitlab.v4.objects import ProjectIssueNote, ProjectIssue
 from loguru import logger
 
 from robota_core import gitlab_tools, config_readers
@@ -49,6 +48,8 @@ class Issue:
             self._issue_from_gitlab(issue, get_comments)
         elif issue_source == "github":
             self._issue_from_github(issue, get_comments)
+        elif issue_source == "test data":
+            self._issue_from_test_data(issue)
         else:
             raise TypeError(f"Unknown issue type: '{issue_source}'")
 
@@ -89,7 +90,7 @@ class Issue:
             for comment in comments:
                 self.comments.append(IssueComment(comment, "github"))
 
-    def _issue_from_gitlab(self, gitlab_issue: gitlab.v4.objects.ProjectIssue, get_comments: bool):
+    def _issue_from_gitlab(self, gitlab_issue: ProjectIssue, get_comments: bool):
         """Convert a GitLabIssue to a RoboTA issue."""
         self.created_at = string_to_datetime(gitlab_issue.attributes["created_at"])
         self.assignee = gitlab_issue.attributes["assignee"]
@@ -114,6 +115,11 @@ class Issue:
             all_notes = gitlab_issue.notes.list(all=True)
             for note in all_notes:
                 self.comments.append(IssueComment(note, "gitlab"))
+
+    def _issue_from_test_data(self, issue_data):
+        (number, title) = issue_data
+        self.number = number
+        self.title = title
 
     def get_assignee(self) -> Union[str, None]:
         """ Return name of issue assignee
@@ -169,13 +175,14 @@ class Issue:
         :return: If phrase is present in a comment, return the the time of the comment,
           else return None
         """
-        # Comments are stored oldest first
+        # Since we can't guarantee that all Git hosting sites will return comments in the same order
+        # we specifically search for the one we want
         comments = self.comments
-        if not earliest:
-            comments = reversed(comments)
-        for comment in comments:
-            if key_phrase in comment.text:
-                return comment.created_at
+
+        matching_comments = [c.created_at for c in comments if key_phrase in c.text]
+        if matching_comments:
+            matching_comments.sort(reverse=not earliest)
+            return matching_comments[0]
         return None
 
     def get_recorded_team_member(self, key_phrase: str) -> Union[None, List[str]]:
@@ -436,10 +443,12 @@ class IssueComment:
             self._comment_from_gitlab(comment)
         elif source == "github":
             self._comment_from_github(comment)
+        elif source == "test data":
+            self._comment_from_test_data(comment)
         else:
             raise TypeError(f"Unknown commit comment source: '{source}'.")
 
-    def _comment_from_gitlab(self, comment: gitlab.v4.objects.ProjectIssueNote):
+    def _comment_from_gitlab(self, comment: ProjectIssueNote):
         """Populate an instance of a comment from a GitLab note."""
         self.text = clean(comment.attributes["body"])
         self.created_at = string_to_datetime(comment.attributes["created_at"])
@@ -450,6 +459,13 @@ class IssueComment:
         self.text = comment.body
         self.created_at = comment.created_at
         self.updated_at = comment.updated_at
+
+    def _comment_from_test_data(self, comment: Tuple[str, datetime.datetime, datetime.datetime, str]):
+        (text, created_at, updated_at, system) = comment
+        self.text = text
+        self.created_at = created_at
+        self.updated_at = updated_at
+        self.system = system
 
 
 def get_issue_by_title(issues: List[Issue], title: str) -> Union[Issue, None]:

@@ -14,7 +14,7 @@ setup(
     packages=find_packages(),
     install_requires=['requests',
                       'jinja2',
-                      'python-gitlab==2.2.0',
+                      'python-gitlab==2.10.1',
                       'PyYaml>=5.1',
                       'pytest',
                       'gitpython',
