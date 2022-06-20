@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='robota_core',
-    version='2.2.1',
+    version='2.2.2',
     description='An automated assessment and progress monitoring tool.',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -14,7 +14,7 @@ setup(
     packages=find_packages(),
     install_requires=['requests',
                       'jinja2',
-                      'python-gitlab==2.2.0',
+                      'python-gitlab==2.10.1',
                       'PyYaml>=5.1',
                       'pytest',
                       'gitpython',

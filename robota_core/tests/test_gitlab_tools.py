@@ -1,10 +1,11 @@
 """"Tests for gitlab_tools.py"""
-import datetime
+from datetime import datetime, timedelta
 
 import gitlab
 import pytest
 
-from robota_core.gitlab_tools import GitlabServer, GitlabGroup
+from robota_core.gitlab_tools import GitlabServer
+from robota_core.issue import Issue, IssueComment
 from robota_core.repository import Event
 from robota_core import commit
 
@@ -20,6 +21,28 @@ class TestOpenGitlab:
             _ = GitlabServer(self.bad_url, self.bad_token)
 
 
+class IssueTests:
+    @staticmethod
+    def test_fetch_earliest_matching_comment():
+        text_to_match = "changed due date to"
+        first_date = datetime(1, 1, 2020, hour=12)
+        one_day = timedelta(days=1)
+        two_days = timedelta(days=2)
+        update_date = datetime(5, 5, 2020)
+        test_issue = Issue((1, 'GUI bug'), "test data")
+        # A list of comments in non-chronological order
+        test_issue.comments = [
+            IssueComment(("removed milestone", first_date + one_day, update_date, True), "test data"),
+            IssueComment((text_to_match, first_date + two_days, update_date, True), "test data"),
+            IssueComment(("Tests completed for this issue", first_date - one_day, update_date, False), "test data"),
+            IssueComment((text_to_match, first_date, update_date, True), "test data"),
+            IssueComment(("changed time estimate to", first_date - two_days, update_date, True), "test data")
+        ]
+
+        assert test_issue.get_comment_timestamp(text_to_match, earliest=True) == first_date
+        assert test_issue.get_comment_timestamp(text_to_match, earliest=False) == first_date + two_days
+
+
 class TestGetTags:
     @staticmethod
     def test_added_tag_after_deadline():
@@ -32,7 +55,7 @@ class TestGetTags:
                          "push_data": {"ref_type": "tag", "ref_name": "feature",
                                        "commit_id": "333", "commit_count": "1"}})]
 
-        tags = commit.get_tags_at_date(datetime.datetime(2020, 1, 1), tags, events)
+        tags = commit.get_tags_at_date(datetime(2020, 1, 1), tags, events)
         assert isinstance(tags, list)
         assert len(tags) == 2
         assert tags[0].name == "master"
@@ -48,7 +71,7 @@ class TestGetTags:
                          "push_data": {"ref_type": "tag", "ref_name": "feature",
                                        "commit_id": "333", "commit_count": "1"}})]
 
-        tags = commit.get_tags_at_date(datetime.datetime(2020, 1, 1), tags, events)
+        tags = commit.get_tags_at_date(datetime(2020, 1, 1), tags, events)
         assert isinstance(tags, list)
         assert len(tags) == 3
         assert tags[0].name == "master"
@@ -72,7 +95,7 @@ class TestGetTags:
                                        "commit_id": "333", "commit_count": "1"}})
                   ]
 
-        tags = commit.get_tags_at_date(datetime.datetime(2020, 1, 1), tags, events)
+        tags = commit.get_tags_at_date(datetime(2020, 1, 1), tags, events)
         assert isinstance(tags, list)
         assert len(tags) == 2
         assert tags[0].name == "master"

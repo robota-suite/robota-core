@@ -1,12 +1,12 @@
-RoboTA data types and data sources
---------------------------------------
+RoboTA config
+---------------
 
 RoboTA reads in various types of data from different sources.
 This could be data about software engineering objects such as git commits or it could
 be about the human elements of software engineering such as interactions with an
 issue board or bug tracker.
 
-In order to be as flexible as possible, you can specify different sources for each of these data types.
+These data types and their sources are specified in the robota-config file.
 
 Data types
 ============
@@ -16,15 +16,15 @@ Depending on what parts of RoboTA are being used, not all the data types may be 
 **Every data type requires a 'data_source' key which says where the data comes from.**
 Some data types have additional keys which are required to specify details of the data type.
 
-Not all methods of each data type are implemented for every data source, for example a
-'local_repository' type repository does not provide information on pull/merge requests. In these cases
-attempting to use an invalid method will raise a Python NotImplementedError.
 
 marking_config
 ##################
 The location of the set up files for RoboTA marking.
 
-Valid data sources: local_path, gitlab
+Valid data sources:
+
+* local_path
+* gitlab
 
 Required keys:
 
@@ -39,44 +39,64 @@ issues
 ##########
 The location of issues. Issues are used in marking students planning and teamwork.
 
-Valid sources: gitlab, github
+Valid sources:
+
+* gitlab
+* github
 
 ci
 ####
 A CI server hosting tests assessing student code.
 
-Valid sources: jenkins
+Valid sources:
+
+* jenkins
 
 repository
 ###########
 A source of information about commits, tags, events, branches and files 
 in the student work repository.
 
-Valid sources: gitlab, github, local_repository
+Valid sources:
+
+* gitlab
+* github
+* local_repository
 
 remote_provider
 #################
 A cloud provider that hosts git repositories. Provides info about pull/merge requests and team members
 
-Valid sources: gitlab, github
+Valid sources:
+
+* gitlab
+* github
 
 attendance
 ###########
 Information about student attendance at a class, workshop or event
 
-Valid sources: benchmark
+Valid sources:
+
+* benchmark
 
 student_details
 ################
 Information about student names and usernames
 
-Valid sources: gitlab, local_path
+Valid sources:
+
+* gitlab
+* local_path
 
 student_emails
 ##################
 The relationship between student usernames and email addresses
 
-Valid sources: gitlab, local_path
+Valid sources:
+
+* gitlab
+* local_path
 
 required keys:
 
@@ -86,17 +106,14 @@ ta_marks
 ##########
 Manually assigned marks that can be used to override RoboTA marks in the marking report
 
-Valid sources: gitlab, local_path
+Valid sources:
+
+* gitlab
+* local_path
 
 required keys:
 
 * ta_marks_file - The path of the file containing the TA marks.
-
-gitlab_tests
-#############
-Connection to a test repository to test functions of the code relating to gitlab
-
-Valid sources: gitlab
 
 Data Sources
 =============
@@ -189,12 +206,6 @@ required sub-values:
 
 Note that a connection to benchmark requires either being on campus or use of the UoM VPN.
 
-Variable Substitution
-=========================
-To improve automation, named keys in the config file can be specified which are replaced by values at
-run time. Strings to be substituted should be enclosed in curly brackets. Replacement values should be
-specified as command line arguments.
-
 Example Config
 ================
 .. code-block:: YAML
@@ -233,3 +244,31 @@ Example Config
 In this case repository could probably be set to the data source: ``github_repo``, but it might be useful to
 set it to ``local_repository`` if the repository was already synced locally and was large. Operating on large
 repositories locally is likely to be more efficient in most cases than querying them through the API.
+
+
+Variable Substitution
+=========================
+To improve automation, named keys in the config file can be specified which are replaced by values at
+run time. Strings to be substituted should be enclosed in curly brackets.
+
+The second argument of the :meth:`robota_core.config_readers.get_robota_config` method is a dictionary of
+substitutions. The keys are the variable to replace and the values are the values to substitute in.
+
+An example robota config might look like:
+
+.. code-block:: YAML
+
+    data_types:
+        repository:
+            data_source: student_repo
+
+    data_sources:
+        student_repo:
+            type: github
+            url: www.gitlab.com
+            project: UoMProgramming/first_year/Team{team_number}
+            token: xxx-xxx-xxx
+
+To loop assessment over many teams you could read in the config in a loop using the
+:meth:`robota_core.config_readers.get_robota_config` method. On the first loop the
+*substitution_vars* parameter would be {"team_number": 01}, on the second loop, {"team_number": 02} etc.
