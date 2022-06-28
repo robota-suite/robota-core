@@ -1,5 +1,5 @@
 """"Tests for gitlab_tools.py"""
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import gitlab
 import pytest
@@ -19,28 +19,6 @@ class TestOpenGitlab:
         """A bad URL should raise a different error."""
         with pytest.raises(gitlab.exceptions.GitlabGetError):
             _ = GitlabServer(self.bad_url, self.bad_token)
-
-
-class IssueTests:
-    @staticmethod
-    def test_fetch_earliest_matching_comment():
-        text_to_match = "changed due date to"
-        first_date = datetime(1, 1, 2020, hour=12)
-        one_day = timedelta(days=1)
-        two_days = timedelta(days=2)
-        update_date = datetime(5, 5, 2020)
-        test_issue = Issue((1, 'GUI bug'), "test data")
-        # A list of comments in non-chronological order
-        test_issue.comments = [
-            IssueComment(("removed milestone", first_date + one_day, update_date, True), "test data"),
-            IssueComment((text_to_match, first_date + two_days, update_date, True), "test data"),
-            IssueComment(("Tests completed for this issue", first_date - one_day, update_date, False), "test data"),
-            IssueComment((text_to_match, first_date, update_date, True), "test data"),
-            IssueComment(("changed time estimate to", first_date - two_days, update_date, True), "test data")
-        ]
-
-        assert test_issue.get_comment_timestamp(text_to_match, earliest=True) == first_date
-        assert test_issue.get_comment_timestamp(text_to_match, earliest=False) == first_date + two_days
 
 
 class TestGetTags:

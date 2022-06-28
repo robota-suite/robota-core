@@ -198,9 +198,10 @@ class Issue:
         # - key_phrase @username
         # - key_phrase https://gitlab.cs.man.ac.uk/username
         # - key_phrase https://gitlab.cs.man.ac.uk/user.name
+        # - key_phrase https://gitlab.cs.man.ac.uk/user-name
         # Also permit the team member to be quoted or in angle brackets
         # Also permit the url to be in square brackets as this is markdown for a link
-        regex = r"\s*(<|\"|\'|\[)*(@|https://gitlab.cs.man.ac.uk/)(\w+\.*\w*)(>|\"|\'|\])*"
+        regex = r"\s*(<|\"|\'|\[)*(@|https:\/\/gitlab\.cs\.man\.ac\.uk\/)(\w+[-\.]?\w*)(>|\"|\'|\])*"
         regex = key_phrase + regex
         recorded_team_member = []
         for comment in self.comments:
