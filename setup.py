@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='robota_core',
-    version='2.2.3',
+    version='2.3.0',
     description='An automated assessment and progress monitoring tool.',
     long_description=long_description,
     long_description_content_type="text/markdown",
