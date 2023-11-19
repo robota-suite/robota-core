@@ -439,6 +439,7 @@ class IssueComment:
         self.created_at = None
         self.updated_at = None
         self.system = None
+        self.author = None
 
         if source == "gitlab":
             self._comment_from_gitlab(comment)
@@ -455,18 +456,21 @@ class IssueComment:
         self.created_at = string_to_datetime(comment.attributes["created_at"])
         self.updated_at = string_to_datetime(comment.attributes["updated_at"])
         self.system = comment.attributes["system"]
+        self.author = comment.attributes["author"]["username"]
 
     def _comment_from_github(self, comment: github.IssueComment):
         self.text = comment.body
         self.created_at = comment.created_at
         self.updated_at = comment.updated_at
+        self.author = comment.user["login"]
 
-    def _comment_from_test_data(self, comment: Tuple[str, datetime.datetime, datetime.datetime, str]):
-        (text, created_at, updated_at, system) = comment
+    def _comment_from_test_data(self, comment: Tuple[str, datetime.datetime, datetime.datetime, str, str]):
+        (text, created_at, updated_at, system, author_name) = comment
         self.text = text
         self.created_at = created_at
         self.updated_at = updated_at
         self.system = system
+        self.author = author_name
 
 
 def get_issue_by_title(issues: List[Issue], title: str) -> Union[Issue, None]:
