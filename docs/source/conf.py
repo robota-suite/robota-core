@@ -22,7 +22,7 @@ copyright = '2019, Peter Crowther'
 author = 'Peter Crowther'
 
 # The full version, including alpha/beta/rc tags
-release = '2.3.0'
+release = '2.3.1-alpha'
 
 
 # -- General configuration ---------------------------------------------------
