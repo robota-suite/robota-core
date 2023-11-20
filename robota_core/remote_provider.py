@@ -47,6 +47,11 @@ class RemoteProvider:
         """Get a dictionary of names and corresponding usernames of members of this repository."""
         raise NotImplementedError("Not implemented in base class.")
 
+    @abstractmethod
+    def get_wiki_pages(self) -> Dict[str, str]:
+        """Get a dictionary of page slugs to page contents from the wiki of this repository"""
+        raise NotImplementedError("Not implemented in base class.")
+
 
 class GithubRemoteProvider(RemoteProvider):
     def __init__(self, provider_source: dict):
@@ -66,6 +71,9 @@ class GithubRemoteProvider(RemoteProvider):
         members = self.repo.get_collaborators()
         member_names = {member.name: member.login for member in members}
         return member_names
+
+    def get_wiki_pages(self) -> Dict[str, str]:
+        raise NotImplementedError("Not implemented in base class.")
 
 
 class GitlabRemoteProvider(RemoteProvider):
@@ -91,6 +99,23 @@ class GitlabRemoteProvider(RemoteProvider):
         member_names = {member.attributes['name']: member.attributes['username']
                         for member in members}
         return member_names
+
+    def get_wiki_pages(self) -> Dict[str, Dict[str, str]]:
+        """Get a dictionary of page slugs to page contents from the wiki of this repository.
+        GitLab doesn't return the page contents as part of the list of wikis returned from the
+        project.  These have to be requested individually given the slug."""
+        wiki_pages_by_slug = {}
+        pages = self.project.wikis.list()
+        for page in pages:
+            slug = page.slug
+            title = page.title
+            contents = self.project.wikis.get(slug).content
+            if len(contents) > 1000:
+                contents = contents[:999]
+            wiki_pages_by_slug[slug] = {'title': title,
+                                        'content': contents,
+                                        'url': self.project.web_url + '/-/wikis/' + slug}
+        return wiki_pages_by_slug
 
 
 def new_remote_provider(robota_config: dict) -> Union[RemoteProvider, None]:
