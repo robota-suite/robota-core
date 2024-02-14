@@ -48,7 +48,7 @@ class MergeRequest:
         self.author = gl_merge_request.attributes['author']
         self.url = gl_merge_request.attributes['web_url']
         self.comments = [MergeRequestComment(note, "gitlab") for
-                         note in gl_merge_request.notes.list()]
+                         note in gl_merge_request.notes.list(get_all=True)]
         self.state = gl_merge_request.attributes['state']
 
 
