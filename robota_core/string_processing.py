@@ -7,7 +7,7 @@ import markdown
 
 
 def string_to_datetime(date: Union[str, None],
-                       datetime_format: str = '%Y-%m-%dT%H:%M:%S.%fZ') -> Union[datetime.datetime,
+                       datetime_format: str = '%Y-%m-%dT%H:%M:%S.%f%z') -> Union[datetime.datetime,
                                                                                 None]:
     """Convert time string (output from GitLab project attributes) to datetime.
 
@@ -21,7 +21,8 @@ def string_to_datetime(date: Union[str, None],
     if date is None:
         return None
     if isinstance(date, str):
-        return datetime.datetime.strptime(date, datetime_format)
+        gmt_date = date.replace('Z', '+00:00')
+        return datetime.datetime.strptime(gmt_date, datetime_format)
     else:
         raise TypeError("Unknown date type. Cannot convert.")
 
