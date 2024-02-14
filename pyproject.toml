@@ -14,8 +14,9 @@ classifiers = [
 
 dependencies = ['requests',
                 'jinja2',
-                'python-gitlab==2.10.1',
-                'PyYaml>=5.1', 'pytest',
+                'python-gitlab>=4.2.0',
+                'PyYaml>=5.1',
+                'pytest',
                 'gitpython',
                 'python-jenkins',
                 'python-dateutil',

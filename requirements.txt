@@ -1,6 +1,6 @@
 requests
 jinja2
-python-gitlab==2.10.1
+python-gitlab>=4.2.0
 PyYaml>=5.1
 pytest
 gitpython

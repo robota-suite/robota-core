@@ -1,6 +1,7 @@
 """Objects and for describing and processing Git Issues."""
 from abc import abstractmethod
 import datetime
+from operator import attrgetter
 from typing import List, Union, Tuple
 import re
 
@@ -110,11 +111,22 @@ class Issue:
 
         self.url = gitlab_issue.attributes["web_url"]
         self.number = gitlab_issue.attributes["iid"]
-        # Returns comments in descending order of creation date (oldest first)
         if get_comments:
             all_notes = gitlab_issue.notes.list(all=True)
             for note in all_notes:
                 self.comments.append(IssueComment(note, "gitlab"))
+
+            # Convert the issue state events into comments (since GitLab now handles these events separately
+            # and does not create a comment on the issue when its state changes.
+            all_state_events = gitlab_issue.resourcestateevents.list(all=True)
+            for state_change in all_state_events:
+                state_change_occurred_at = string_to_datetime(state_change.created_at)
+                note = (state_change.state, state_change_occurred_at, state_change_occurred_at, True, state_change.user["username"])
+                self.comments.append(IssueComment(note, "test data"))
+
+        # Returns comments in descending order of creation date (oldest first)
+        self.comments.sort(key=attrgetter("created_at"))
+
 
     def _issue_from_test_data(self, issue_data):
         (number, title) = issue_data
@@ -213,35 +225,6 @@ class Issue:
         if recorded_team_member:
             return recorded_team_member
         return None
-
-    def get_date_of_time_spent_record(self, key_phrase: str) -> Union[datetime.datetime, str]:
-        """Determine whether a time spent category has been recorded.
-        The key phrase should appear in a comment to indicate what the time has been spent on.
-
-        :param key_phrase: Phrase to search for, which should have a time record associated with it
-        :return: Last edited time of comment recording time spent
-        """
-
-        # The order of the comments is most recent (i.e. last) first.
-        # Start with the most recent comment, where the key phrases are most likely to appear.
-        for n, comment in enumerate(self.comments):
-            if key_phrase in comment.text:
-                # A `/spend` command in a key phrase comment generates a subsequent comment in
-                # the web interface. In the API, the generated 'time spent' comment shows before
-                # the key phrase comment in time, i.e. comment index + 1!
-                # Furthermore, students might not use the `/spend` command in a comment and
-                # add the time separately. As such, we look for 'time spent' in both the
-                # previous (`/spend`) and next (manual) comment.
-
-                # 'Previous' and 'next' are used  below in the temporal sense,
-                # rather than relating to indices.
-                previous_comment = self.comments[n + 1]
-                next_comment = self.comments[n - 1]
-                if 'time spent' in next_comment.text or 'time spent' in previous_comment.text:
-                    return comment.updated_at
-                else:
-                    return "No time record found"
-        return "Key phrase not found"
 
     def is_assignee_contributing(self, team) -> Union[bool, str]:
         """Determine whether the Student assigned to work on an Issue is contributing to the
