@@ -17,12 +17,12 @@ sys.path.insert(0, os.path.abspath('../../'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'RoboTA'
-copyright = '2019, Peter Crowther'
-author = 'Peter Crowther'
+project = 'RoboTA Core'
+copyright = '2023, The University of Manchester'
+author = 'Peter Crowther, Suzanne M. Embury'
 
 # The full version, including alpha/beta/rc tags
-release = '2.3.1-alpha'
+release = '2.3.3-alpha'
 
 
 # -- General configuration ---------------------------------------------------

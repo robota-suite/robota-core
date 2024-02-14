@@ -2,6 +2,7 @@ import datetime
 from abc import abstractmethod
 from typing import List, Union, Dict
 
+import gitlab
 from loguru import logger
 
 from robota_core import gitlab_tools, config_readers
@@ -109,12 +110,16 @@ class GitlabRemoteProvider(RemoteProvider):
         for page in pages:
             slug = page.slug
             title = page.title
-            contents = self.project.wikis.get(slug).content
-            if len(contents) > 1000:
-                contents = contents[:999]
-            wiki_pages_by_slug[slug] = {'title': title,
-                                        'content': contents,
-                                        'url': self.project.web_url + '/-/wikis/' + slug}
+            try:
+                contents = self.project.wikis.get(slug).content
+                if len(contents) > 1000:
+                    contents = contents[:999]
+                wiki_pages_by_slug[slug] = {'title': title,
+                                            'content': contents,
+                                            'url': self.project.web_url + '/-/wikis/' + slug}
+            except gitlab.exceptions.GitlabGetError:
+                logger.warning('Wiki page could not be returned: ' + slug)
+
         return wiki_pages_by_slug
 
 

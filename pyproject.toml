@@ -1,6 +1,6 @@
 [project]
 name = "robota_core"
-version = "2.3.1-alpha"
+version = "2.3.3-alpha"
 authors = [
   { name="University of Manchester", email="suzanne.m.embury@manchester.ac.uk" },
 ]
@@ -14,8 +14,9 @@ classifiers = [
 
 dependencies = ['requests',
                 'jinja2',
-                'python-gitlab==2.10.1',
-                'PyYaml>=5.1', 'pytest',
+                'python-gitlab>=4.2.0',
+                'PyYaml>=5.1',
+                'pytest',
                 'gitpython',
                 'python-jenkins',
                 'python-dateutil',

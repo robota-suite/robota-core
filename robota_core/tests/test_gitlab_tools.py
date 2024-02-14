@@ -1,11 +1,10 @@
 """"Tests for gitlab_tools.py"""
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 import gitlab
 import pytest
 
 from robota_core.gitlab_tools import GitlabServer
-from robota_core.issue import Issue, IssueComment
 from robota_core.repository import Event
 from robota_core import commit
 
@@ -33,7 +32,7 @@ class TestGetTags:
                          "push_data": {"ref_type": "tag", "ref_name": "feature",
                                        "commit_id": "333", "commit_count": "1"}})]
 
-        tags = commit.get_tags_at_date(datetime(2020, 1, 1), tags, events)
+        tags = commit.get_tags_at_date(datetime(2020, 1, 1, tzinfo=timezone(timedelta(hours=0))), tags, events)
         assert isinstance(tags, list)
         assert len(tags) == 2
         assert tags[0].name == "master"
@@ -49,7 +48,7 @@ class TestGetTags:
                          "push_data": {"ref_type": "tag", "ref_name": "feature",
                                        "commit_id": "333", "commit_count": "1"}})]
 
-        tags = commit.get_tags_at_date(datetime(2020, 1, 1), tags, events)
+        tags = commit.get_tags_at_date(datetime(2020, 1, 1, tzinfo=timezone(timedelta(hours=0))), tags, events)
         assert isinstance(tags, list)
         assert len(tags) == 3
         assert tags[0].name == "master"
@@ -73,7 +72,7 @@ class TestGetTags:
                                        "commit_id": "333", "commit_count": "1"}})
                   ]
 
-        tags = commit.get_tags_at_date(datetime(2020, 1, 1), tags, events)
+        tags = commit.get_tags_at_date(datetime(2020, 1, 1, tzinfo=timezone(timedelta(hours=0))), tags, events)
         assert isinstance(tags, list)
         assert len(tags) == 2
         assert tags[0].name == "master"
