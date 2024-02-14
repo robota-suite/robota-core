@@ -1,6 +1,6 @@
 [project]
 name = "robota_core"
-version = "2.3.1-alpha"
+version = "2.3.3-alpha"
 authors = [
   { name="University of Manchester", email="suzanne.m.embury@manchester.ac.uk" },
 ]
