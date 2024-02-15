@@ -1,13 +1,14 @@
 import datetime
 import re
 from typing import Union, Dict
+from zoneinfo import ZoneInfo
 
 import bleach
 import markdown
 
 
 def string_to_datetime(date: Union[str, None],
-                       datetime_format: str = '%Y-%m-%dT%H:%M:%S.%f%z') -> Union[datetime.datetime,
+                       datetime_format: str = None) -> Union[datetime.datetime,
                                                                                 None]:
     """Convert time string (output from GitLab project attributes) to datetime.
 
@@ -21,8 +22,13 @@ def string_to_datetime(date: Union[str, None],
     if date is None:
         return None
     if isinstance(date, str):
-        gmt_date = date.replace('Z', '+00:00')
-        return datetime.datetime.strptime(gmt_date, datetime_format)
+        if datetime_format is None:
+            datetime_format = '%Y-%m-%dT%H:%M:%S.%f%z'
+        dt = datetime.datetime.strptime(date, datetime_format)
+        if dt.tzinfo is None:
+            # Convert the naive datetime into an aware datetime in UTC
+            dt = dt.replace(tzinfo=ZoneInfo("Europe/London"))
+        return dt
     else:
         raise TypeError("Unknown date type. Cannot convert.")
 
