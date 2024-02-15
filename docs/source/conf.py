@@ -22,7 +22,7 @@ copyright = '2023, The University of Manchester'
 author = 'Peter Crowther, Suzanne M. Embury'
 
 # The full version, including alpha/beta/rc tags
-release = '2.3.3-alpha'
+release = '2.3.4-alpha'
 
 
 # -- General configuration ---------------------------------------------------
