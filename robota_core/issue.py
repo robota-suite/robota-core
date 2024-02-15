@@ -98,7 +98,10 @@ class Issue:
         self.closed_at = string_to_datetime(gitlab_issue.attributes["closed_at"])
         self.closed_by = gitlab_issue.attributes["closed_by"]
         self.time_stats = gitlab_issue.attributes["time_stats"]
-        self.due_date = string_to_datetime(gitlab_issue.attributes["due_date"], '%Y-%m-%d')
+        due_date_as_datetime = gitlab_issue.attributes["due_date"] + "T12:00:00.000+00:00" \
+                               if gitlab_issue.attributes["due_date"] is not None \
+                               else None
+        self.due_date = string_to_datetime(due_date_as_datetime)
         self.title = gitlab_issue.attributes["title"]
         if gitlab_issue.state == "opened":
             self.state = "open"
@@ -126,7 +129,6 @@ class Issue:
 
         # Returns comments in descending order of creation date (oldest first)
         self.comments.sort(key=attrgetter("created_at"))
-
 
     def _issue_from_test_data(self, issue_data):
         (number, title) = issue_data
@@ -247,7 +249,7 @@ class Issue:
         :param deadline:
         :return:
         """
-        if datetime.datetime.now() < deadline:
+        if datetime.datetime.now(datetime.timezone.utc) < deadline:
             return self.state
         else:
             for comment in self.comments:
@@ -289,8 +291,8 @@ class IssueServer:
     def __init__(self):
         self._stored_issues: List[IssueCache] = []
 
-    def get_issues(self, start: datetime.datetime = datetime.datetime.fromtimestamp(1),
-                   end: datetime.datetime = datetime.datetime.now(),
+    def get_issues(self, start: datetime.datetime = datetime.datetime.fromtimestamp(1, datetime.timezone.utc),
+                   end: datetime.datetime = datetime.datetime.now(datetime.timezone.utc),
                    get_comments: bool = True) -> List[Issue]:
         """Get issues from the issue provider between the start date and end date."""
         cached_issues = self._get_cached_issues(start, end)

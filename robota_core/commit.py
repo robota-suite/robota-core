@@ -78,8 +78,7 @@ class Commit:
     def _commit_from_github(self, github_commit: github.Commit.Commit):
         commit = github_commit.commit
 
-        created_at = dateutil.parser.parse(commit.last_modified)
-        self.created_at = created_at.replace(tzinfo=None)
+        self.created_at = dateutil.parser.parse(commit.last_modified)
         self.id = commit.sha
         self.author_name = commit.author.name
         self.short_id = self.id[:10]
@@ -93,8 +92,7 @@ class Commit:
 
     def _commit_from_gitlab(self, gitlab_commit: gitlab.v4.objects.ProjectCommit, project_url: str):
         """Convert a Gitlab commit to RoboTA Commit."""
-        created_at = dateparser.parse(gitlab_commit.attributes["created_at"])
-        self.created_at = created_at.replace(tzinfo=None)
+        self.created_at = dateparser.parse(gitlab_commit.attributes["created_at"])
         self.id = gitlab_commit.attributes["id"]
         self.author_name = gitlab_commit.attributes["author_name"]
         self.short_id = gitlab_commit.attributes["short_id"]

@@ -4,7 +4,7 @@ build information.
 """
 import json
 from loguru import logger
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Union, List, Dict, TypeVar
 from abc import ABC, abstractmethod
@@ -79,7 +79,7 @@ class Build:
         """Create a Robota Build object from a Jenkins build object."""
         self.number = jenkins_build["number"]
         self.result = self._assign_build_result(jenkins_build["result"])
-        self.timestamp = datetime.fromtimestamp(jenkins_build["timestamp"] / 1000)
+        self.timestamp = datetime.fromtimestamp(jenkins_build["timestamp"] / 1000, timezone.utc)
         self.link = get_link(jenkins_build["url"], self.result.name)
         self.test_coverage_url = f'{jenkins_build["url"]}jacoco/'
         for action in jenkins_build["actions"]:
