@@ -233,7 +233,7 @@ class Repository:
         new_commit = self._fetch_commit_by_id(commit_id)
 
         # Add the new commit to a cache of its own.
-        fake_date = datetime.datetime.fromtimestamp(1)
+        fake_date = datetime.datetime.fromtimestamp(1, datetime.timezone.utc)
         new_cache = CommitCache(fake_date, fake_date, "", [new_commit])
         self._stored_commits.append(new_cache)
 

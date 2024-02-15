@@ -18,8 +18,8 @@ class RemoteProvider:
     def __init__(self):
         self._stored_merge_requests: List[MergeRequestCache] = []
 
-    def get_merge_requests(self, start: datetime.datetime = datetime.datetime.fromtimestamp(1),
-                           end: datetime.datetime = datetime.datetime.now()) -> List[MergeRequest]:
+    def get_merge_requests(self, start: datetime.datetime = datetime.datetime.fromtimestamp(1, datetime.timezone.utc),
+                           end: datetime.datetime = datetime.datetime.now(tz=datetime.timezone.utc)) -> List[MergeRequest]:
         cached_merge_requests = self._get_cached_merge_requests(start, end)
         if cached_merge_requests:
             return cached_merge_requests.merge_requests
