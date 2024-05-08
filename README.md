@@ -51,3 +51,6 @@ and then run
 ```shell
 docker run -it robota-core
 ```
+
+This Dockerfile is set up for _development_. Since this is library code, the Dockerfile provides a consistent way to
+run and test new functionality.

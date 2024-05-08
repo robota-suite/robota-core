@@ -1,5 +1,7 @@
 FROM python:3.11-alpine
 
+# This Dockerfile is set up for development
+
 RUN apk update && \
     apk add --no-cache graphviz \
       ttf-freefont \
@@ -12,6 +14,6 @@ RUN apk update && \
 COPY . ./app
 WORKDIR ./app
 
-RUN pip install --no-cache-dir .
+RUN pip install -e --no-cache-dir .
 
 CMD ["bash"]
