@@ -46,7 +46,7 @@ class Branch:
         self.id = branch.attributes["commit"]["id"]
 
         if project_url is not None:
-            self.url = f"{project_url}/tree/~/{branch.attributes['name']}"
+            self.url = f"{project_url}/-/tree/{branch.attributes['name']}"
         else:
             self.url = None
 
