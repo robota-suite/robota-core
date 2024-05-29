@@ -38,3 +38,19 @@ RoboTA requires access to a number of data sources to collect data to operate on
 Details of these data sources and information required to connect to them is provided in the robota config yaml file.
 Documentation on the config file can be found in the _data_sources_ section of the documentation.
 RoboTA config template files are provided with the robota-common-errors, robota-progress and robota-marking packages.
+
+Running with Docker
+-------------------
+
+To run with docker (from the project root), first build
+```shell
+docker build . -t robota-core
+```
+
+and then run
+```shell
+docker run -it robota-core
+```
+
+This Dockerfile is set up for _development_. Since this is library code, the Dockerfile provides a consistent way to
+run and test new functionality.
