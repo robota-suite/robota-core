@@ -14,10 +14,10 @@ class GithubServer:
         :param setup: dictionary containing GitHub url and authentication token.
         """
         self.url = setup["url"]
-        self.server: github.Github = self._open_github_connection(setup)
+        self.server = self._open_gitlab_connection(setup)
 
     @staticmethod
-    def _open_github_connection(setup: dict) -> github.Github:
+    def _open_gitlab_connection(setup: dict):
         """Open a connection to the GitLab server using authentication token."""
         token = None
         if "token" in setup:
