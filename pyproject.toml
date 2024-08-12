@@ -25,8 +25,11 @@ PyGithub = "*"
 loguru = "*"
 dateparser = "*"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 # Add your development dependencies here
+
+[tool.poetry.group.test.dependencies]
+# Add your test dependencies here
 
 [tool.poetry.urls]
 Homepage = "https://gitlab.cs.man.ac.uk/institute-of-coding/robota-core"
