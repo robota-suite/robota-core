@@ -52,11 +52,6 @@ class Branch:
         self.name = branch["name"]
         self.id = branch["commit_id"]
 
-        if "url" in branch:
-            self.url = branch["url"]
-        else:
-            self.url = None
-
     def _branch_from_github(self, branch: github.Branch.Branch):
         self.name = branch.name
         self.id = branch.commit.sha
