@@ -27,15 +27,15 @@ class Branch:
     :ivar id: Commit id that branch points to.
     :ivar project_url: base URL of the project.
     """
-    def __init__(self, branch, source: str, project_url: str = None):
+    def __init__(self, branch, source: str):
         self.name = None
         self.id = None
         self.url = None
 
         if source == "gitlab":
-            self._branch_from_gitlab(branch, project_url=project_url)
+            self._branch_from_gitlab(branch)
         elif source == "github":
-            self._branch_from_github(branch, project_url=project_url)
+            self._branch_from_github(branch)
         elif source == "dict":
             self._branch_from_dict(branch)
         elif source == "local":
@@ -43,14 +43,10 @@ class Branch:
         else:
             TypeError("Unknown branch type.")
 
-    def _branch_from_gitlab(self, branch: gitlab.v4.objects.ProjectBranch, project_url: str = None):
+    def _branch_from_gitlab(self, branch: gitlab.v4.objects.ProjectBranch):
         self.name = branch.attributes["name"]
         self.id = branch.attributes["commit"]["id"]
-
-        if project_url is not None:
-            self.url = f"{project_url}/-/tree/{branch.attributes['name']}"
-        else:
-            self.url = None
+        self.url = branch.attributes["web_url"]
 
     def _branch_from_dict(self, branch: dict):
         self.name = branch["name"]
@@ -61,14 +57,10 @@ class Branch:
         else:
             self.url = None
 
-    def _branch_from_github(self, branch: github.Branch.Branch, project_url: str = None):
+    def _branch_from_github(self, branch: github.Branch.Branch):
         self.name = branch.name
         self.id = branch.commit.sha
-
-        if project_url is not None:
-            self.url = f"{project_url}/tree/{branch.name}"
-        else:
-            self.url = None
+        self.url = branch._rawData["_links"]["html"]
 
     def _branch_from_local(self, branch: git.Head):
         self.name = branch.name
@@ -408,7 +400,7 @@ class GithubRepository(Repository):
         return file_paths
 
     def _fetch_branches(self) -> List[Branch]:
-        return [Branch(branch, "github", project_url=self.project_url) for branch in self.repo.get_branches()]
+        return [Branch(self.repo.get_branch(branch.name), "github") for branch in self.repo.get_branches()]
 
     def get_events(self) -> List[Event]:
         raise NotImplementedError("Method not implemented for Github Repository")
@@ -485,7 +477,7 @@ class GitlabRepository(Repository):
         return file_paths
 
     def _fetch_branches(self) -> List[Branch]:
-        return [Branch(branch, "gitlab", project_url=self.project_url) for branch in self.project.branches.list(all=True)]
+        return [Branch(branch, "gitlab") for branch in self.project.branches.list(all=True)]
 
     def get_events(self) -> List[Event]:
         """Return a list of Events associated with this repository."""
