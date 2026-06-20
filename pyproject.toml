@@ -29,7 +29,7 @@ dateparser = "*"
 # Add your development dependencies here
 
 [tool.poetry.group.test.dependencies]
-# Add your test dependencies here
+hypothesis = ">=6.0.0"
 
 [tool.poetry.urls]
 Homepage = "https://gitlab.cs.man.ac.uk/institute-of-coding/robota-core"
