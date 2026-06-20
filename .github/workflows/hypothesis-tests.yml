@@ -79,3 +79,11 @@ jobs:
         poetry run python -m pytest robota_core/tests/test_hypothesis_properties.py \
           -v -s \
           --tb=short
+
+    - name: Upload Hypothesis examples database
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: hypothesis-examples
+        path: .hypothesis/examples/
+        if-no-files-found: ignore

@@ -1,10 +1,5 @@
 """Property-based tests using Hypothesis.
 
-These tests exercise pure, self-contained functions in robota_core that do not
-require any network access to real GitHub or GitLab repositories.  All five
-tests operate entirely on in-process data structures or locally-constructed
-objects.
-
 Hypothesis profiles
 -------------------
 Two profiles are registered here:
@@ -25,20 +20,19 @@ extra context that appears in the failure report when an example is shrunk.
 """
 
 import os
+import re
+import string
 
 from hypothesis import HealthCheck, Verbosity, given, note, settings
 from hypothesis import strategies as st
+from hypothesis.database import DirectoryBasedExampleDatabase
 
 from robota_core.commit import Commit
 from robota_core.string_processing import (
+    append_list_to_dict,
     html_newlines,
-    list_to_html_rows,
     replace_none,
 )
-
-# ---------------------------------------------------------------------------
-# Hypothesis profile setup
-# ---------------------------------------------------------------------------
 
 settings.register_profile(
     "default",
@@ -50,31 +44,33 @@ settings.register_profile(
     max_examples=50,
     suppress_health_check=[HealthCheck.too_slow],
     verbosity=Verbosity.verbose,
+    database=DirectoryBasedExampleDatabase(".hypothesis/examples"),
 )
 settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
 
 
-# ---------------------------------------------------------------------------
-# Test 1: html_newlines – all newline characters are replaced
-# ---------------------------------------------------------------------------
+# A character set that includes newlines alongside printable ASCII.
+# Restricting the alphabet (rather than using all Unicode) makes it much more
+# likely that Hypothesis generates strings containing '\n' within the available
+# example budget.
+_printable_with_newline = st.text(
+    alphabet='\n ' + string.ascii_letters + string.digits + string.punctuation
+)
 
-@given(text=st.text())
-def test_html_newlines_no_bare_newlines_in_result(text):
-    """After calling html_newlines(), the result must not contain bare '\\n'.
 
-    Every newline sequence in the input is converted to '<br>', so the
-    output should be free of '\\n' characters regardless of what the
-    input looks like.
+@given(text=_printable_with_newline)
+def test_html_newlines_br_count_equals_newline_group_count(text):
+    """html_newlines() replaces each run of one or more consecutive newlines
+    with a single '<br>'.  The number of '<br>' tokens in the output must
+    therefore equal the number of newline groups (maximal runs of '\\n') in the
+    input.
     """
     result = html_newlines(text)
     note(f"input:  {text!r}")
     note(f"output: {result!r}")
-    assert "\n" not in result
+    newline_group_count = len(re.findall(r'\n+', text))
+    assert result.count('<br>') == newline_group_count
 
-
-# ---------------------------------------------------------------------------
-# Test 2: replace_none – length is preserved
-# ---------------------------------------------------------------------------
 
 _any_or_none = st.one_of(st.none(), st.integers(), st.text(), st.booleans())
 
@@ -88,10 +84,6 @@ def test_replace_none_preserves_length(lst):
     assert len(result) == len(lst)
 
 
-# ---------------------------------------------------------------------------
-# Test 3: replace_none – output contains no None values
-# ---------------------------------------------------------------------------
-
 @given(lst=st.lists(_any_or_none, max_size=50))
 def test_replace_none_contains_no_nones(lst):
     """replace_none() must return a list that contains no None entries."""
@@ -101,34 +93,56 @@ def test_replace_none_contains_no_nones(lst):
     assert None not in result
 
 
-# ---------------------------------------------------------------------------
-# Test 4: list_to_html_rows – splitting on '<br>' recovers the original list
-# ---------------------------------------------------------------------------
+@given(lst=st.lists(st.one_of(st.none(), st.integers(), st.booleans()), max_size=50))
+def test_replace_none_replacement_count_matches_none_count(lst):
+    """Every None in the input must become the replacement value.
 
-_safe_string = st.text(
-    alphabet=st.characters(exclude_characters=["<", ">", "&"]),
-    max_size=80,
-)
-
-
-@given(items=st.lists(_safe_string, max_size=20))
-def test_list_to_html_rows_split_roundtrip(items):
-    """Splitting the output of list_to_html_rows() on '<br>' should give back
-    the original list of strings, provided those strings do not themselves
-    contain '<br>'.
+    By restricting the input strategy to integers and booleans (no strings),
+    the sentinel replacement string cannot already appear in the list, so
+    the count of replacement values in the output must equal exactly the
+    number of None values in the input.
     """
-    joined = list_to_html_rows(items)
-    note(f"items:  {items!r}")
-    note(f"joined: {joined!r}")
-    if items:
-        assert joined.split("<br>") == items
-    else:
-        assert joined == ""
+    sentinel = "REPLACED"
+    result = replace_none(lst, replacement=sentinel)
+    none_count = sum(1 for x in lst if x is None)
+    replaced_count = sum(1 for x in result if x == sentinel)
+    note(f"input:         {lst!r}")
+    note(f"output:        {result!r}")
+    note(f"none_count:    {none_count}")
+    note(f"replaced_count: {replaced_count}")
+    assert replaced_count == none_count
 
 
-# ---------------------------------------------------------------------------
-# Test 5: Commit.merge_commit – property derived from parent count
-# ---------------------------------------------------------------------------
+@given(
+    key=st.text(min_size=1, max_size=20),
+    new_values=st.lists(st.text(max_size=10), max_size=10),
+    existing_values=st.lists(st.text(max_size=10), max_size=10),
+    has_existing=st.booleans(),
+)
+def test_append_list_to_dict_key_present_and_values_preserved(
+        key, new_values, existing_values, has_existing):
+    """append_list_to_dict() must always result in the key being present.
+    All new_values must appear in the final list, and any values already
+    stored under the key must be retained.
+    """
+    d = {}
+    if has_existing:
+        d[key] = list(existing_values)
+
+    append_list_to_dict(d, key, new_values)
+
+    note(f"key:            {key!r}")
+    note(f"new_values:     {new_values!r}")
+    note(f"existing_values:{existing_values!r} (present={has_existing})")
+    note(f"result:         {d[key]!r}")
+
+    assert key in d
+    for item in new_values:
+        assert item in d[key]
+    if has_existing:
+        for item in existing_values:
+            assert item in d[key]
+
 
 _commit_id = st.text(
     alphabet="0123456789abcdef",
