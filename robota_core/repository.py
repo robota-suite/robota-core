@@ -3,6 +3,7 @@ import io
 import sys
 from abc import abstractmethod
 from typing import List, Union
+from hashlib import sha1, sha256
 
 import github
 import github.Branch
@@ -17,16 +18,19 @@ from robota_core.commit import CommitCache, Tag, Commit, get_tags_at_date
 from robota_core.github_tools import GithubServer
 from robota_core.string_processing import string_to_datetime
 
+GITLAB_DIFF_FILES_PER_PAGE = 20
 
 class Branch:
     """An abstract object representing a git branch.
 
-    :ivar id: Name of branch.
+    :ivar name: Name of branch.
     :ivar id: Commit id that branch points to.
+    :ivar project_url: base URL of the project.
     """
     def __init__(self, branch, source: str):
         self.name = None
         self.id = None
+        self.url = None
 
         if source == "gitlab":
             self._branch_from_gitlab(branch)
@@ -42,6 +46,7 @@ class Branch:
     def _branch_from_gitlab(self, branch: gitlab.v4.objects.ProjectBranch):
         self.name = branch.attributes["name"]
         self.id = branch.attributes["commit"]["id"]
+        self.url = branch.attributes["web_url"]
 
     def _branch_from_dict(self, branch: dict):
         self.name = branch["name"]
@@ -50,10 +55,12 @@ class Branch:
     def _branch_from_github(self, branch: github.Branch.Branch):
         self.name = branch.name
         self.id = branch.commit.sha
+        self.url = branch._rawData["_links"]["html"]
 
     def _branch_from_local(self, branch: git.Head):
         self.name = branch.name
         self.id = branch.commit.hexsha
+        self.url = None
 
 
 class Event:
@@ -107,11 +114,13 @@ class Event:
 class Diff:
     """A representation of a git diff between two points in time for a single
     file in a git repository."""
-    def __init__(self, diff_info, diff_source: str):
+    def __init__(self, diff_info, diff_source: str, url: str = None):
         self.old_path: str
         self.new_path: str
         self.new_file: bool
         self.diff: str
+
+        self.url = url
 
         if diff_source == "gitlab":
             self._diff_from_gitlab(diff_info)
@@ -134,6 +143,7 @@ class Diff:
         self.new_path = diff_info.b_path
         self.new_file = diff_info.new_file
         self.diff = diff_info.diff
+        self.url = None
 
     def _diff_from_github(self, diff_info: github.File.File):
         self.new_path = diff_info.filename
@@ -146,7 +156,6 @@ class Diff:
         else:
             self.new_file = False
         self.diff = diff_info.patch
-
 
 class Repository:
     """A place where commits, tags, events, branches and files come from.
@@ -379,7 +388,7 @@ class GithubRepository(Repository):
         return file_paths
 
     def _fetch_branches(self) -> List[Branch]:
-        return [Branch(branch, "github") for branch in self.repo.get_branches()]
+        return [Branch(self.repo.get_branch(branch.name), "github") for branch in self.repo.get_branches()]
 
     def get_events(self) -> List[Event]:
         raise NotImplementedError("Method not implemented for Github Repository")
@@ -393,7 +402,7 @@ class GithubRepository(Repository):
 
     def compare(self, point_1: str, point_2: str) -> List[Diff]:
         comparison = self.repo.compare(point_1, point_2)
-        return [Diff(diff, "github") for diff in comparison.files]
+        return [Diff(diff, "github", url=f'{comparison.html_url}#diff-{sha256(diff.filename.encode(), usedforsecurity=False).hexdigest()}') for diff in comparison.files]
 
     def _fetch_commit_by_id(self, commit_id: str) -> Union[Commit, None]:
         try:
@@ -483,7 +492,17 @@ class GitlabRepository(Repository):
         """
         if not point_1 + point_2 in self._diffs:
             gitlab_diffs = self.project.repository_compare(point_1, point_2)
-            robota_diffs = [Diff(diff, "gitlab") for diff in gitlab_diffs["diffs"]]
+
+            diff_base_url = gitlab_diffs["web_url"]
+
+            robota_diffs = []
+            for i, diff in enumerate(gitlab_diffs["diffs"]):
+                # gitlab comparisions are paginated
+                page = i // GITLAB_DIFF_FILES_PER_PAGE + 1
+                sha1_hash = sha1(diff["new_path"].encode(), usedforsecurity=False).hexdigest()
+
+                robota_diffs.append(Diff(diff, "gitlab", url=f'{diff_base_url}?page={page}#{sha1_hash}'))
+            
             self._diffs[point_1 + point_2] = robota_diffs
 
         return self._diffs[point_1 + point_2]
